@@ -143,9 +143,105 @@ void mapSkip(Layer *l, int * __restrict out, int x, int z, int w, int h)
         printf("mapSkip() requires a non-null parent layer.\n");
         exit(1);
     }
-    l->p->getMap(l->p, out, x, z, w, h);
+    int ps = l->p->scale;
+    int s = l->scale;
+
+    if (ps == s) {
+        l->p->getMap(l->p, out, x, z, w, h);
+    } else if (ps == (s << 1)) {
+        mapSkipZoom1(l, out, x, z, w, h);
+    } else if (ps == (s << 2)) {
+        mapSkipZoom2(l, out, x, z, w, h);
+    } else {
+        printf("Invalid scale for skip layer: cannot convert from scale %d to %d.\n", ps, s);
+        exit(1);
+    }
 }
 
+// Skip layer which increases the map size x2
+void mapSkipZoom1(Layer *l, int * __restrict out, int areaX, int areaZ, int areaWidth, int areaHeight)
+{
+    int pX = areaX >> 1;
+    int pZ = areaZ >> 1;
+    int pWidth =  (areaWidth >> 1) + 2;
+    int pHeight = (areaHeight >> 1) + 2;
+    int x, z;
+
+    l->p->getMap(l->p, out, pX, pZ, pWidth, pHeight);
+
+    int newWidth = (pWidth-1) << 1;
+    int newHeight = (pHeight-1) << 1;
+    int idx;
+    int *buf = (int *)malloc((newWidth+1)*(newHeight+1)*sizeof(*buf));
+
+    for (z = 0; z < pHeight - 1; z++)
+    {
+        idx = (z << 1) * newWidth;
+
+        for (x = 0; x < pWidth - 1; x++)
+        {
+            int a = out[x + (z+0)*pWidth];
+
+            buf[idx] = a;
+            buf[idx + newWidth] = a;
+            idx++;
+
+            buf[idx] = a;
+            buf[idx + newWidth] = a;
+
+            idx++;
+        }
+    }
+
+    for (z = 0; z < areaHeight; z++)
+    {
+        memcpy(&out[z*areaWidth], &buf[(z + (areaZ & 1))*newWidth + (areaX & 1)], areaWidth*sizeof(int));
+    }
+
+    free(buf);
+}
+
+// Skip layer which increases the map size x4
+void mapSkipZoom2(Layer *l, int * __restrict out, int areaX, int areaZ, int areaWidth, int areaHeight)
+{
+    areaX -= 2;
+    areaZ -= 2;
+    int pX = areaX >> 2;
+    int pZ = areaZ >> 2;
+    int pWidth = (areaWidth >> 2) + 2;
+    int pHeight = (areaHeight >> 2) + 2;
+    int newWidth = (pWidth-1) << 2;
+    int newHeight = (pHeight-1) << 2;
+    int x, z, i, j;
+    int *buf = (int *)malloc((newWidth+1)*(newHeight+1)*sizeof(*buf));
+
+    l->p->getMap(l->p, out, pX, pZ, pWidth, pHeight);
+
+    for (z = 0; z < pHeight - 1; z++)
+    {
+        for (x = 0; x < pWidth - 1; x++)
+        {
+            int v00 = out[x + (z+0)*pWidth] & 255;
+
+            for (j = 0; j < 4; j++)
+            {
+                int idx = ((z << 2) + j) * newWidth + (x << 2);
+
+                for (i = 0; i < 4; i++)
+                {
+                    buf[idx++] = v00;
+                }
+            }
+        }
+    }
+
+    for (z = 0; z < areaHeight; z++)
+    {
+        memcpy(&out[z * areaWidth], &buf[(z + (areaZ & 3))*newWidth + (areaX & 3)], areaWidth*sizeof(int));
+    }
+
+    free(buf);
+}
 
 void mapIsland(Layer *l, int * __restrict out, int areaX, int areaZ, int areaWidth, int areaHeight)
 {

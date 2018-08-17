@@ -414,6 +414,8 @@ void mapNull(Layer *l, int * __restrict out, int x, int z, int w, int h);
 // A skip layer simply calls its first parent without modification.
 // This can be used as an easy way to skip a layer in a generator.
 void mapSkip(Layer *l, int * __restrict out, int x, int z, int w, int h);
+void mapSkipZoom1(Layer *l, int * __restrict out, int x, int z, int w, int h);
+void mapSkipZoom2(Layer *l, int * __restrict out, int x, int z, int w, int h);
 
 void mapIsland(Layer *l, int * __restrict out, int x, int z, int w, int h);
 void mapZoom(Layer *l, int * __restrict out, int x, int z, int w, int h);
