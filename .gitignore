@@ -3,6 +3,7 @@ find_compactbiomes
 find_quadhuts
 multifinder
 rendermap
+rendermaplayers
 output
 *.o
 .cproject

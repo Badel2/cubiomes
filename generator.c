@@ -36,6 +36,75 @@ LayerStack setupGenerator(const int mcversion)
 }
 
 
+LayerStack setupGeneratorMC17UpTo(int l)
+{
+    if (biomes[plains].id == 0)
+    {
+        fprintf(stderr, "Warning: The biomes have to be initialised first using initBiomes() before any generator can be used.\n");
+    }
+
+    LayerStack g;
+
+    g.layerNum = 44;
+    g.layers = (Layer*) malloc(sizeof(Layer)*g.layerNum);
+
+    //         SCALE    LAYER          PARENT      SEED  LAYER_FUNCTION
+    setupLayer(4096, &g.layers[ 0],          NULL,    1, l > 0 ? mapIsland : mapSkip);
+    setupLayer(2048, &g.layers[ 1], &g.layers[ 0], 2000, l > 1 ? mapZoom : mapSkip);
+    setupLayer(2048, &g.layers[ 2], &g.layers[ 1],    1, l > 2 ? mapAddIsland : mapSkip);
+    setupLayer(1024, &g.layers[ 3], &g.layers[ 2], 2001, l > 3 ? mapZoom : mapSkip);
+    setupLayer(1024, &g.layers[ 4], &g.layers[ 3],    2, l > 4 ? mapAddIsland : mapSkip);
+    setupLayer(1024, &g.layers[ 5], &g.layers[ 4],   50, l > 5 ? mapAddIsland : mapSkip);
+    setupLayer(1024, &g.layers[ 6], &g.layers[ 5],   70, l > 6 ? mapAddIsland : mapSkip);
+    setupLayer(1024, &g.layers[ 7], &g.layers[ 6],    2, l > 7 ? mapRemoveTooMuchOcean : mapSkip);
+    setupLayer(1024, &g.layers[ 8], &g.layers[ 7],    2, l > 8 ? mapAddSnow : mapSkip);
+    setupLayer(1024, &g.layers[ 9], &g.layers[ 8],    3, l > 9 ? mapAddIsland : mapSkip);
+    setupLayer(1024, &g.layers[10], &g.layers[ 9],    2, l > 10 ? mapCoolWarm : mapSkip);
+    setupLayer(1024, &g.layers[11], &g.layers[10],    2, l > 11 ? mapHeatIce : mapSkip);
+    setupLayer(1024, &g.layers[12], &g.layers[11],    3, l > 12 ? mapSpecial : mapSkip);
+    setupLayer( 512, &g.layers[13], &g.layers[12], 2002, l > 13 ? mapZoom : mapSkip);
+    setupLayer( 256, &g.layers[14], &g.layers[13], 2003, l > 14 ? mapZoom : mapSkip);
+    setupLayer( 256, &g.layers[15], &g.layers[14],    4, l > 15 ? mapAddIsland : mapSkip);
+    setupLayer( 256, &g.layers[16], &g.layers[15],    5, l > 16 ? mapAddMushroomIsland : mapSkip);
+    setupLayer( 256, &g.layers[17], &g.layers[16],    4, l > 17 ? mapDeepOcean : mapSkip);
+    // biome layer chain
+    setupLayer( 256, &g.layers[18], &g.layers[17],  200, l > 18 ? mapBiome : mapSkip);
+    setupLayer( 128, &g.layers[19], &g.layers[18], 1000, l > 19 ? mapZoom : mapSkip);
+    setupLayer(  64, &g.layers[20], &g.layers[19], 1001, l > 20 ? mapZoom : mapSkip);
+    setupLayer(  64, &g.layers[21], &g.layers[20], 1000, l > 21 ? mapBiomeEdge : mapSkip);
+
+    // basic river layer chain, used to determine where hills generate
+    setupLayer( 256, &g.layers[22], &g.layers[17],  100, l > 22 ? mapRiverInit : mapSkip);
+    setupLayer( 128, &g.layers[23], &g.layers[22], 1000, l > 23 ? mapZoom : mapSkip);
+    setupLayer(  64, &g.layers[24], &g.layers[23], 1001, l > 24 ? mapZoom : mapSkip);
+
+    setupMultiLayer(64, &g.layers[25], &g.layers[21], &g.layers[24], 1000, l > 25 ? mapHills: mapSkip);
+
+    setupLayer(  64, &g.layers[26], &g.layers[25], 1001, l > 26 ? mapRareBiome : mapSkip);
+    setupLayer(  32, &g.layers[27], &g.layers[26], 1000, l > 27 ? mapZoom : mapSkip);
+    setupLayer(  32, &g.layers[28], &g.layers[27],    3, l > 28 ? mapAddIsland : mapSkip);
+    setupLayer(  16, &g.layers[29], &g.layers[28], 1001, l > 29 ? mapZoom : mapSkip);
+    setupLayer(  16, &g.layers[30], &g.layers[29], 1000, l > 30 ? mapShore : mapSkip);
+    setupLayer(   8, &g.layers[31], &g.layers[30], 1002, l > 31 ? mapZoom : mapSkip);
+    setupLayer(   4, &g.layers[32], &g.layers[31], 1003, l > 32 ? mapZoom : mapSkip);
+    setupLayer(   4, &g.layers[33], &g.layers[32], 1000, l > 33 ? mapSmooth : mapSkip);
+
+    // river layer chain
+    setupLayer( 128, &g.layers[34], &g.layers[22], 1000, l > 34 ? mapZoom : mapSkip);
+    setupLayer(  64, &g.layers[35], &g.layers[34], 1001, l > 35 ? mapZoom : mapSkip);
+    setupLayer(  32, &g.layers[36], &g.layers[35], 1000, l > 36 ? mapZoom : mapSkip);
+    setupLayer(  16, &g.layers[37], &g.layers[36], 1001, l > 37 ? mapZoom : mapSkip);
+    setupLayer(   8, &g.layers[38], &g.layers[37], 1002, l > 38 ? mapZoom : mapSkip);
+    setupLayer(   4, &g.layers[39], &g.layers[38], 1003, l > 39 ? mapZoom : mapSkip);
+    setupLayer(   4, &g.layers[40], &g.layers[39],    1, l > 40 ? mapRiver : mapSkip);
+    setupLayer(   4, &g.layers[41], &g.layers[40], 1000, l > 41 ? mapSmooth : mapSkip);
+
+    setupMultiLayer(4, &g.layers[42], &g.layers[33], &g.layers[41], 100, l > 42 ? mapRiverMix : mapSkip);
+    setupLayer(   1, &g.layers[43], &g.layers[42],   10, l > 43 ? mapVoronoiZoom : mapSkip);
+
+    return g;
+}
+
 LayerStack setupGeneratorMC17()
 {
     if (biomes[plains].id == 0)
